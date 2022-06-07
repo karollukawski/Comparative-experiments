@@ -30,6 +30,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances, accuracy_score
 from tabulate import tabulate
+from sklearn import preprocessing
 
 
 classifiers = [
@@ -39,7 +40,7 @@ classifiers = [
 ]
 
 
-X, y = make_classification(n_samples=500,n_informative=5,n_features=30)
+X, y = make_classification(n_samples=500, n_informative=5, n_features=30)
 
 mu, sigma = 0, 0.1 # mean and standard deviation
 s = np.random.normal(mu, sigma, X.shape[1])
@@ -47,7 +48,6 @@ X = X * s
 
 rskf = RepeatedStratifiedKFold(n_splits=5,n_repeats=5)
 rskf.get_n_splits(X, y)
-
 
 average =[]
 deviation =[]
@@ -57,13 +57,22 @@ for cf_cnt, cf in enumerate(classifiers):
     for train_index, test_index in rskf.split(X,y):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
+        
+        scaler = StandardScaler()
+        scaler.fit(X_train)
+        X_scaled = scaler.fit_transform(X_train)
+        X_scaled_test = scaler.transform(X_test)
+        
         clf = clone(cf)
-        clf.fit(X_train,y_train)
+        clf.fit(X_scaled,y_train)
         pred = clf.predict(X_test)
         pkt.append(accuracy_score(y_test, pred))
 
     average.append(np.mean(pkt))
     deviation.append(np.std(pkt))
+
+    
+
 
 
 table = [['','CART','kNN','SVC'],
